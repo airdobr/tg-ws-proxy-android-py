@@ -119,7 +119,7 @@ class MainActivity : Activity() {
     override fun onPause() { super.onPause(); h.removeCallbacks(tick) }
 
     companion object {
-        const val BLUE = 0xFF2AABEE.toInt()
+        const val BLUE = 0xFFF4511E.toInt()  // «включено» — цвет иконки приложения
         const val GREY = 0xFF9E9E9E.toInt()
     }
 }

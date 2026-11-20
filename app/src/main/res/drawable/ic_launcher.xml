@@ -1,4 +1,16 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item><shape android:shape="oval"><solid android:color="#FF2AABEE" /></shape></item>
-    <item android:drawable="@drawable/ic_plane" android:left="10dp" android:top="12dp" android:right="14dp" android:bottom="12dp" />
+    <!-- Скруглённый квадрат с оранжевым градиентом: не путается с круглой голубой иконкой Telegram -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="14dp" />
+            <gradient android:angle="315" android:startColor="#FFFFB300" android:endColor="#FFE64A19" />
+        </shape>
+    </item>
+    <!-- Белое кольцо-«щит» вокруг самолётика -->
+    <item android:left="7dp" android:top="7dp" android:right="7dp" android:bottom="7dp">
+        <shape android:shape="oval">
+            <stroke android:width="3dp" android:color="#FFFFFFFF" />
+        </shape>
+    </item>
+    <item android:drawable="@drawable/ic_plane" android:left="14dp" android:top="15dp" android:right="17dp" android:bottom="15dp" />
 </layer-list>

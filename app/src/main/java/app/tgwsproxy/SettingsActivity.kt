@@ -44,7 +44,9 @@ class SettingsActivity : Activity() {
 
     override fun onCreate(s: Bundle?) {
         super.onCreate(s)
-        root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 48, 32, 32) }
+        root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 96, 32, 32) }
+        root.addView(Button(this).apply { text = "← Назад"; setOnClickListener { finish() } },
+            LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
 
         section("MTProto-прокси")
         label("IP-адрес (127.0.0.1 — только это устройство, 0.0.0.0 — все интерфейсы)")
@@ -66,7 +68,8 @@ class SettingsActivity : Activity() {
         section("Cloudflare Proxy")
         val cf = check("cf", "Включить CF-прокси", true)
         val h2 = check("h2", "Мультиплексирование медиа (HTTP/2)", true)
-        val ns = check("no_secure", "Выключить TLS для CF-прокси и CF-worker", false)
+        val ns = check("no_secure", "Выключить TLS для CF-прокси и CF-worker (всегда)", false)
+        check("auto_mobile", "Автоматически выключать TLS в мобильной сети и включать на Wi-Fi", true)
         fun sync() { h2.isEnabled = cf.isChecked && !ns.isChecked }
         cf.setOnCheckedChangeListener { _, _ -> sync() }; ns.setOnCheckedChangeListener { _, _ -> sync() }; sync()
         domainRow("cf_user_on", "cf_user", "Свой домен", "домены через запятую")

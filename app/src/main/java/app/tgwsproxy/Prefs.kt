@@ -33,6 +33,19 @@ object Prefs {
         return newSecret().also { put(c, "secret", it) }
     }
 
+    /** Нужен ли режим без TLS для данного типа сети. */
+    fun noSecureFor(c: Context, mobile: Boolean) =
+        bool(c, "no_secure", false) || (mobile && bool(c, "auto_mobile", true))
+
+    fun isMobile(c: Context): Boolean {
+        val cm = c.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+        val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
+        return isMobile(caps)
+    }
+    fun isMobile(caps: android.net.NetworkCapabilities) =
+        caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) &&
+            !caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI)
+
     private fun domains(s: String) = s.split(',', ';', ' ', '\n').map { it.trim() }.filter { it.isNotEmpty() }
 
     /** Аргументы командной строки ядра, собранные из настроек (как в десктопной версии). */
@@ -45,7 +58,7 @@ object Prefs {
             "--log-max-mb", str(c, "log_mb", "5"))
         if (!bool(c, "cf", true)) a += "--no-cfproxy"
         if (!bool(c, "h2", true)) a += "--no-h2"
-        if (bool(c, "no_secure", false)) a += "--no-secure"
+        if (noSecureFor(c, isMobile(c))) a += "--no-secure"
         if (bool(c, "cf_user_on", false)) domains(str(c, "cf_user", "")).forEach { a += listOf("--cfproxy-domain", it) }
         if (bool(c, "cf_worker_on", false)) domains(str(c, "cf_worker", "")).forEach { a += listOf("--cfproxy-worker-domain", it) }
         return a

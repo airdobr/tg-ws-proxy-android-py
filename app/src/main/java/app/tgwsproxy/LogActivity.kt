@@ -19,6 +19,8 @@ class LogActivity : Activity() {
     override fun onCreate(s: Bundle?) {
         super.onCreate(s)
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 96, 32, 32) }
+        root.addView(Button(this).apply { text = "← Назад"; setOnClickListener { finish() } },
+            LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
         root.addView(TextView(this).apply { text = "Логи"; textSize = 22f })
         val row = LinearLayout(this)
         row.addView(Button(this).apply {
