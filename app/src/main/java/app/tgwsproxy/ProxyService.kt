@@ -33,13 +33,14 @@ class ProxyService : Service() {
                 .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "tgwsproxy:proxy").also { it.acquire() }
             val argv = Prefs.argv(this).toTypedArray()
             val log = File(filesDir, "proxy.log").absolutePath
-            File(filesDir, "proxy.log").appendText("Сервис запущен, старт Python...\n")
+            File(filesDir, "proxy.log").appendText("Сервис запущен, старт Python... (${Prefs.argv(this).filterIndexed { i, _ -> i == 0 || Prefs.argv(this)[i - 1] != "--secret" }.joinToString(" ")})\n")
             Thread({
                 try {
                     if (!Python.isStarted()) Python.start(AndroidPlatform(this))
                     Python.getInstance().getModule("android_main").callAttr("run", argv, log)
                 } catch (e: Throwable) {
                     File(filesDir, "proxy.log").appendText("FATAL: ${e}\n")
+                    File(filesDir, "proxy.log").appendText("Ядро остановилось\n")
                 } finally {
                     Prefs.running(this, false)
                 }

@@ -19,8 +19,10 @@ object Prefs {
     fun port(c: Context) = str(c, "port", "1443").toIntOrNull() ?: 1443
     fun host(c: Context) = str(c, "host", "127.0.0.1")
     fun linkHost(c: Context) = host(c).let { if (it == "0.0.0.0" || it.isBlank()) "127.0.0.1" else it }
-    fun isRunning(c: Context) = p(c).getBoolean("running", false)
-    fun running(c: Context, v: Boolean) = p(c).edit().putBoolean("running", v).apply()
+    // Флаг живёт только в памяти процесса: если Android убил процесс, прокси точно не работает.
+    @Volatile private var runningNow = false
+    fun isRunning(@Suppress("UNUSED_PARAMETER") c: Context) = runningNow
+    fun running(@Suppress("UNUSED_PARAMETER") c: Context, v: Boolean) { runningNow = v }
 
     fun newSecret(): String {
         val b = ByteArray(16).also { SecureRandom().nextBytes(it) }
