@@ -23,7 +23,7 @@ class MainActivity : Activity() {
     override fun onCreate(s: Bundle?) {
         super.onCreate(s)
         if (Build.VERSION.SDK_INT >= 33) requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1)
-        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 48, 32, 32) }
+        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 96, 32, 32) }
         fun btn(t: String, f: () -> Unit) = Button(this).apply {
             text = t; setOnClickListener { f() }; root.addView(this, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
         }
@@ -46,8 +46,17 @@ class MainActivity : Activity() {
             try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u))) }
             catch (e: Exception) { Toast.makeText(this, "Telegram не найден", Toast.LENGTH_SHORT).show() }
         }
-        log = TextView(this).apply { textSize = 11f; typeface = android.graphics.Typeface.MONOSPACE }
-        root.addView(ScrollView(this).apply { addView(log) }, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f))
+        btn("Поделиться логом") {
+            val f = File(filesDir, "proxy.log")
+            val t = if (f.exists()) f.readText().takeLast(20000) else "лог пуст"
+            startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, t), "Лог"))
+        }
+        log = TextView(this).apply {
+            textSize = 11f; typeface = android.graphics.Typeface.MONOSPACE
+            setTextIsSelectable(true); setPadding(16, 16, 16, 16)
+        }
+        root.addView(ScrollView(this).apply { setBackgroundColor(0xFFDDDDDD.toInt()); addView(log) },
+            LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f).apply { topMargin = 16 })
         setContentView(root)
     }
 
@@ -55,7 +64,7 @@ class MainActivity : Activity() {
         override fun run() {
             status.text = if (Prefs.isRunning(this@MainActivity)) "Статус: работает" else "Статус: остановлен"
             val f = File(filesDir, "proxy.log")
-            log.text = if (f.exists()) f.readLines().takeLast(60).joinToString("\n") else ""
+            log.text = if (f.exists()) f.readLines().takeLast(60).joinToString("\n") else "Лог пуст. Нажмите «Запустить»."
             h.postDelayed(this, 1500)
         }
     }

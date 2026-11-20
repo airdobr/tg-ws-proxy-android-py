@@ -34,6 +34,7 @@ class ProxyService : Service() {
             val port = Prefs.port(this)
             val secret = Prefs.secret(this)
             val log = File(filesDir, "proxy.log").absolutePath
+            File(filesDir, "proxy.log").appendText("Сервис запущен, старт Python...\n")
             Thread({
                 try {
                     if (!Python.isStarted()) Python.start(AndroidPlatform(this))
