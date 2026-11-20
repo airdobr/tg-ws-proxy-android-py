@@ -1,0 +1,103 @@
+name: Build & release
+
+on:
+  push:
+    tags: ["v*"]
+  schedule:
+    - cron: "17 3 * * *"   # раз в сутки проверяем новый релиз Flowseal
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Собрать релиз из текущего main, даже если ядро не менялось"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check upstream / prepare version
+        id: prep
+        run: |
+          set -e
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+            echo "build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          LATEST=$(curl -fsSL -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/Flowseal/tg-ws-proxy/releases/latest | jq -r .tag_name)
+          CURRENT=$(cat UPSTREAM_VERSION)
+          echo "Upstream latest: $LATEST, in app: $CURRENT"
+          if [ "$LATEST" = "$CURRENT" ] && [ "${{ inputs.force }}" != "true" ]; then
+            echo "build=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$LATEST" != "$CURRENT" ]; then
+            scripts/sync_upstream.sh "$LATEST"
+          fi
+          # поднимаем patch-версию приложения
+          V=$(cat VERSION); IFS=. read MA MI PA <<< "$V"
+          if git rev-parse "v$V" >/dev/null 2>&1; then V="$MA.$MI.$((PA+1))"; fi
+          echo "$V" > VERSION
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Upstream $LATEST, app v$V" || true
+          git tag "v$V"
+          git push origin HEAD:main "v$V"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "build=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upstream version
+        id: up
+        run: echo "upstream=$(cat UPSTREAM_VERSION)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-java@v4
+        if: steps.prep.outputs.build == 'true'
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        if: steps.prep.outputs.build == 'true'
+        with:
+          gradle-version: "8.7"
+
+      - name: Build signed APK
+        if: steps.prep.outputs.build == 'true'
+        env:
+          APP_VERSION: ${{ steps.prep.outputs.version }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
+          export KEYSTORE_FILE="$RUNNER_TEMP/release.jks"
+          gradle --no-daemon :app:assembleRelease
+          mkdir -p out
+          cp app/build/outputs/apk/release/app-release.apk "out/tg-ws-proxy-v${APP_VERSION}.apk"
+
+      - name: Publish release
+        if: steps.prep.outputs.build == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.prep.outputs.version }}
+          name: v${{ steps.prep.outputs.version }}
+          body: |
+            Ядро: Flowseal/tg-ws-proxy ${{ steps.up.outputs.upstream }}
+            Изменения ядра: https://github.com/Flowseal/tg-ws-proxy/releases/tag/${{ steps.up.outputs.upstream }}
+
+            Скачайте `tg-ws-proxy-v${{ steps.prep.outputs.version }}.apk` ниже и установите поверх старой версии.
+          files: out/*.apk

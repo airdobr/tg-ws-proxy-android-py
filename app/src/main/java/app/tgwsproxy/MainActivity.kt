@@ -32,7 +32,18 @@ class MainActivity : Activity() {
             text = t; setOnClickListener { f() }; root.addView(this, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
         }
         root.addView(TextView(this).apply { text = "TG WS Proxy"; textSize = 22f })
-        root.addView(TextView(this).apply { text = "Ядро Flowseal/tg-ws-proxy ${BuildConfig.UPSTREAM}" })
+        root.addView(TextView(this).apply { text = "Версия ${BuildConfig.VERSION_NAME} · ядро Flowseal/tg-ws-proxy ${BuildConfig.UPSTREAM}" })
+        val upd = Button(this).apply { visibility = android.view.View.GONE }
+        root.addView(upd, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+        Thread {
+            Updater.check()?.let { u ->
+                h.post {
+                    upd.text = "Доступно обновление ${u.version} — скачать"
+                    upd.setOnClickListener { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u.apkUrl))) }
+                    upd.visibility = android.view.View.VISIBLE
+                }
+            }
+        }.start()
         status = TextView(this).apply { textSize = 16f; setPadding(0, 24, 0, 8) }
         root.addView(status)
         btn("Запустить") {

@@ -5,8 +5,9 @@ plugins {
 }
 
 val upstream = file("../UPSTREAM_VERSION").readText().trim()
-val appVersion = System.getenv("APP_VERSION") ?: "0.2.1"
-val appCode = (System.getenv("APP_VERSION_CODE") ?: "1").toInt()
+val appVersion = System.getenv("APP_VERSION") ?: file("../VERSION").readText().trim()
+// 1.2.3 -> 10203
+val appCode = appVersion.split(".").map { it.toInt() }.let { it[0] * 10000 + it[1] * 100 + it[2] }
 
 android {
     namespace = "app.tgwsproxy"
@@ -20,6 +21,7 @@ android {
         versionCode = appCode
         versionName = appVersion
         buildConfigField("String", "UPSTREAM", "\"$upstream\"")
+        buildConfigField("String", "REPO", "\"airdobr/tg-ws-proxy-android-py\"")
         ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
     }
 
