@@ -73,12 +73,18 @@ class MainActivity : Activity() {
 
     private val tick = object : Runnable {
         override fun run() {
-            status.text = if (Prefs.isRunning(this@MainActivity)) "Статус: работает" else "Статус: остановлен"
+            status.text = if (proxyAlive()) "Статус: работает" else "Статус: остановлен"
             val f = File(filesDir, "proxy.log")
             log.text = if (f.exists()) f.readLines().takeLast(60).joinToString("\n") else "Лог пуст. Нажмите «Запустить»."
             h.postDelayed(this, 1500)
         }
     }
+    /** Прокси работает в отдельном процессе app.tgwsproxy:proxy — смотрим, жив ли он. */
+    private fun proxyAlive(): Boolean {
+        val am = getSystemService(ACTIVITY_SERVICE) as android.app.ActivityManager
+        return am.runningAppProcesses?.any { it.processName == "$packageName:proxy" } == true
+    }
+
     override fun onResume() { super.onResume(); h.post(tick) }
     override fun onPause() { super.onPause(); h.removeCallbacks(tick) }
 }

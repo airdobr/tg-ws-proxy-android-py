@@ -18,11 +18,22 @@ class ProxyService : Service() {
 
     override fun onBind(i: Intent?): IBinder? = null
 
+    override fun onCreate() {
+        super.onCreate()
+        val prev = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { t, e ->
+            try { File(filesDir, "proxy.log").appendText("CRASH (сервис): ${android.util.Log.getStackTraceString(e)}\n") } catch (_: Throwable) {}
+            prev?.uncaughtException(t, e)
+        }
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
             Prefs.running(this, false)
             stopForeground(STOP_FOREGROUND_REMOVE)
-            // Ядро работает в потоке Python; самый надёжный стоп — завершить процесс.
+            stopSelf()
+            File(filesDir, "proxy.log").appendText("Прокси остановлен\n")
+            // Сервис живёт в отдельном процессе :proxy, поэтому завершаем только его, окно приложения остаётся.
             android.os.Process.killProcess(android.os.Process.myPid())
             return START_NOT_STICKY
         }
@@ -44,8 +55,8 @@ class ProxyService : Service() {
                     Python.getInstance().getModule("android_main").callAttr("run", argv, log)
                 } catch (e: Throwable) {
                     File(filesDir, "proxy.log").appendText("FATAL: ${e}\n")
-                    File(filesDir, "proxy.log").appendText("Ядро остановилось\n")
                 } finally {
+                    File(filesDir, "proxy.log").appendText("Ядро остановилось\n")
                     Prefs.running(this, false)
                 }
             }, "python-proxy").start()
