@@ -8,10 +8,11 @@
 
     <application
         android:label="TG WS Proxy"
-        android:icon="@android:drawable/ic_menu_share"
+        android:icon="@drawable/ic_launcher"
         android:allowBackup="false"
         android:usesCleartextTraffic="true">
         <activity android:name=".SettingsActivity" android:exported="false" />
+        <activity android:name=".LogActivity" android:exported="false" />
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

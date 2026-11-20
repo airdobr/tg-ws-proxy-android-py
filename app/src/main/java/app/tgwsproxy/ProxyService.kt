@@ -73,7 +73,7 @@ class ProxyService : Service() {
         val n = Notification.Builder(this, "proxy")
             .setContentTitle("TG WS Proxy работает")
             .setContentText("${Prefs.linkHost(this)}:${Prefs.port(this)}")
-            .setSmallIcon(android.R.drawable.ic_menu_share)
+            .setSmallIcon(R.drawable.ic_plane)
             .setContentIntent(pi).setOngoing(true).build()
         if (Build.VERSION.SDK_INT >= 34)
             startForeground(1, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
