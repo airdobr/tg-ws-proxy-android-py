@@ -85,7 +85,7 @@ jobs:
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
           export KEYSTORE_FILE="$RUNNER_TEMP/release.jks"
-          gradle --no-daemon :app:assembleRelease
+          gradle --no-daemon :app:assembleRelease || { sleep 60; gradle --no-daemon :app:assembleRelease; } || { sleep 120; gradle --no-daemon :app:assembleRelease; }
           mkdir -p out
           cp app/build/outputs/apk/release/app-release.apk "out/tg-ws-proxy-v${APP_VERSION}.apk"
 
