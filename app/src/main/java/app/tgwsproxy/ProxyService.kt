@@ -29,8 +29,12 @@ class ProxyService : Service() {
         startForegroundCompat()
         if (!Prefs.isRunning(this)) {
             Prefs.running(this, true)
-            wake = (getSystemService(POWER_SERVICE) as PowerManager)
-                .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "tgwsproxy:proxy").also { it.acquire() }
+            wake = try {
+                (getSystemService(POWER_SERVICE) as PowerManager)
+                    .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "tgwsproxy:proxy").also { it.acquire() }
+            } catch (e: Exception) {
+                File(filesDir, "proxy.log").appendText("WakeLock недоступен: $e\n"); null
+            }
             val argv = Prefs.argv(this).toTypedArray()
             val log = File(filesDir, "proxy.log").absolutePath
             File(filesDir, "proxy.log").appendText("Сервис запущен, старт Python... (${Prefs.argv(this).filterIndexed { i, _ -> i == 0 || Prefs.argv(this)[i - 1] != "--secret" }.joinToString(" ")})\n")
@@ -65,7 +69,7 @@ class ProxyService : Service() {
         else startForeground(1, n)
     }
 
-    override fun onDestroy() { wake?.release(); super.onDestroy() }
+    override fun onDestroy() { try { wake?.release() } catch (_: Exception) {}; super.onDestroy() }
 
     companion object { const val ACTION_STOP = "stop" }
 }
