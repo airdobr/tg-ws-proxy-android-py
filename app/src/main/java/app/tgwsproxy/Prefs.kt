@@ -7,8 +7,11 @@ object Prefs {
     const val DEFAULT_DC = "2:149.154.167.220\n4:149.154.167.220"
     private fun p(c: Context) = c.getSharedPreferences("p", Context.MODE_PRIVATE)
 
-    fun str(c: Context, k: String, d: String) = p(c).getString(k, d) ?: d
-    fun bool(c: Context, k: String, d: Boolean) = p(c).getBoolean(k, d)
+    // Читаем через all[], чтобы старые значения другого типа (порт-число из 0.1.x) не роняли приложение.
+    fun str(c: Context, k: String, d: String) = p(c).all[k]?.toString() ?: d
+    fun bool(c: Context, k: String, d: Boolean) = when (val v = p(c).all[k]) {
+        is Boolean -> v; is String -> v.toBooleanStrictOrNull() ?: d; else -> d
+    }
     fun put(c: Context, k: String, v: Any) = p(c).edit().apply {
         when (v) { is Boolean -> putBoolean(k, v); else -> putString(k, v.toString()) }
     }.apply()

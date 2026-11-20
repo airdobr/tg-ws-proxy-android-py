@@ -21,6 +21,11 @@ class MainActivity : Activity() {
 
     override fun onCreate(s: Bundle?) {
         super.onCreate(s)
+        val prev = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { t, e ->
+            try { File(filesDir, "proxy.log").appendText("CRASH: ${android.util.Log.getStackTraceString(e)}\n") } catch (_: Throwable) {}
+            prev?.uncaughtException(t, e)
+        }
         if (Build.VERSION.SDK_INT >= 33) requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1)
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 96, 32, 32) }
         fun btn(t: String, f: () -> Unit) = Button(this).apply {
