@@ -31,14 +31,13 @@ class ProxyService : Service() {
             Prefs.running(this, true)
             wake = (getSystemService(POWER_SERVICE) as PowerManager)
                 .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "tgwsproxy:proxy").also { it.acquire() }
-            val port = Prefs.port(this)
-            val secret = Prefs.secret(this)
+            val argv = Prefs.argv(this).toTypedArray()
             val log = File(filesDir, "proxy.log").absolutePath
             File(filesDir, "proxy.log").appendText("Сервис запущен, старт Python...\n")
             Thread({
                 try {
                     if (!Python.isStarted()) Python.start(AndroidPlatform(this))
-                    Python.getInstance().getModule("android_main").callAttr("run", port, secret, log)
+                    Python.getInstance().getModule("android_main").callAttr("run", argv, log)
                 } catch (e: Throwable) {
                     File(filesDir, "proxy.log").appendText("FATAL: ${e}\n")
                 } finally {
@@ -57,7 +56,7 @@ class ProxyService : Service() {
             this, 0, Intent(this, MainActivity::class.java), android.app.PendingIntent.FLAG_IMMUTABLE)
         val n = Notification.Builder(this, "proxy")
             .setContentTitle("TG WS Proxy работает")
-            .setContentText("127.0.0.1:${Prefs.port(this)}")
+            .setContentText("${Prefs.linkHost(this)}:${Prefs.port(this)}")
             .setSmallIcon(android.R.drawable.ic_menu_share)
             .setContentIntent(pi).setOngoing(true).build()
         if (Build.VERSION.SDK_INT >= 34)

@@ -2,14 +2,7 @@
 import sys
 
 
-def run(port, secret, log_file, extra_args=()):
-    sys.argv = [
-        "tg_ws_proxy",
-        "--host", "127.0.0.1",
-        "--port", str(port),
-        "--secret", secret,
-        "--log-file", log_file,
-        *extra_args,
-    ]
+def run(argv, log_file):
+    sys.argv = ["tg_ws_proxy", *list(argv), "--log-file", log_file]
     from proxy.tg_ws_proxy import main
     main()

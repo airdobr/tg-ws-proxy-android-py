@@ -17,7 +17,6 @@ import java.io.File
 class MainActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var log: TextView
-    private lateinit var port: EditText
     private val h = Handler(Looper.getMainLooper())
 
     override fun onCreate(s: Bundle?) {
@@ -31,18 +30,14 @@ class MainActivity : Activity() {
         root.addView(TextView(this).apply { text = "Ядро Flowseal/tg-ws-proxy ${BuildConfig.UPSTREAM}" })
         status = TextView(this).apply { textSize = 16f; setPadding(0, 24, 0, 8) }
         root.addView(status)
-        port = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER; setText(Prefs.port(this@MainActivity).toString()); hint = "Порт"
-        }
-        root.addView(port)
         btn("Запустить") {
-            port.text.toString().toIntOrNull()?.let { Prefs.setPort(this, it) }
             File(filesDir, "proxy.log").delete()
             startForegroundService(Intent(this, ProxyService::class.java))
         }
+        btn("Настройки") { startActivity(Intent(this, SettingsActivity::class.java)) }
         btn("Остановить") { startService(Intent(this, ProxyService::class.java).setAction(ProxyService.ACTION_STOP)) }
         btn("Применить в Telegram") {
-            val u = "tg://proxy?server=127.0.0.1&port=${Prefs.port(this)}&secret=dd${Prefs.secret(this)}"
+            val u = "tg://proxy?server=${Prefs.linkHost(this)}&port=${Prefs.port(this)}&secret=dd${Prefs.secret(this)}"
             try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u))) }
             catch (e: Exception) { Toast.makeText(this, "Telegram не найден", Toast.LENGTH_SHORT).show() }
         }

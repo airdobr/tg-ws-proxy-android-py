@@ -5,7 +5,7 @@ plugins {
 }
 
 val upstream = file("../UPSTREAM_VERSION").readText().trim()
-val appVersion = System.getenv("APP_VERSION") ?: "0.1.1"
+val appVersion = System.getenv("APP_VERSION") ?: "0.2.0"
 val appCode = (System.getenv("APP_VERSION_CODE") ?: "1").toInt()
 
 android {
