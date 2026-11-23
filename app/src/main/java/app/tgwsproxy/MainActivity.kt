@@ -78,6 +78,7 @@ class MainActivity : Activity() {
             try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u))) }
             catch (e: Exception) { Toast.makeText(this, "Telegram не найден", Toast.LENGTH_SHORT).show() }
         }
+        btn("Ссылка для других устройств") { startActivity(Intent(this, ShareLinkActivity::class.java)) }
         val row = LinearLayout(this)
         row.addView(Button(this).apply { text = "Настройки"; setOnClickListener { startActivity(Intent(this@MainActivity, SettingsActivity::class.java)) } },
             LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))

@@ -108,7 +108,7 @@ class ProxyService : Service() {
             this, 0, Intent(this, MainActivity::class.java), android.app.PendingIntent.FLAG_IMMUTABLE)
         nm.notify(2, Notification.Builder(this, "net")
             .setContentTitle(title).setContentText(text)
-            .setSmallIcon(R.drawable.ic_plane).setContentIntent(pi)
+            .setSmallIcon(R.drawable.ic_notify).setContentIntent(pi)
             .setAutoCancel(true).setTimeoutAfter(15000).build())
     }
 
@@ -124,7 +124,7 @@ class ProxyService : Service() {
             .setContentText("${Prefs.linkHost(this)}:${Prefs.port(this)} · " +
                 (if (mob) "мобильная сеть" else "Wi-Fi") + ", TLS " +
                 (if (Prefs.noSecureFor(this, mob)) "выкл" else "вкл"))
-            .setSmallIcon(R.drawable.ic_plane)
+            .setSmallIcon(R.drawable.ic_notify)
             .setContentIntent(pi).setOngoing(true).build()
         if (Build.VERSION.SDK_INT >= 34)
             startForeground(1, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
