@@ -18,21 +18,35 @@ object Updater {
         return false
     }
 
+    sealed class Result {
+        data class Available(val update: Update) : Result()
+        data class Latest(val version: String) : Result()
+        data class Failed(val error: String) : Result()
+    }
+
+    /** Ручная проверка: различает «обновлений нет» и «нет связи». Не в UI-потоке. */
+    fun checkNow(): Result = try {
+        fetch()?.let { Result.Available(it) } ?: Result.Latest(BuildConfig.VERSION_NAME)
+    } catch (e: Exception) {
+        Result.Failed(e.javaClass.simpleName + (e.message?.let { ": $it" } ?: ""))
+    }
+
     /** Блокирующий вызов, запускать не в UI-потоке. null — обновлений нет или сеть недоступна. */
-    fun check(): Update? = try {
+    fun check(): Update? = try { fetch() } catch (e: Exception) { null }
+
+    private fun fetch(): Update? {
         val c = URL("https://api.github.com/repos/${BuildConfig.REPO}/releases/latest").openConnection() as HttpURLConnection
         c.connectTimeout = 10000; c.readTimeout = 10000
         c.setRequestProperty("Accept", "application/vnd.github+json")
         val j = JSONObject(c.inputStream.bufferedReader().readText())
         val tag = j.getString("tag_name")
-        if (!newer(tag, BuildConfig.VERSION_NAME)) null else {
-            val assets = j.getJSONArray("assets")
-            var apk = j.getString("html_url")
-            for (i in 0 until assets.length()) {
-                val a = assets.getJSONObject(i)
-                if (a.getString("name").endsWith(".apk")) { apk = a.getString("browser_download_url"); break }
-            }
-            Update(tag, apk, j.getString("html_url"))
+        if (!newer(tag, BuildConfig.VERSION_NAME)) return null
+        val assets = j.getJSONArray("assets")
+        var apk = j.getString("html_url")
+        for (i in 0 until assets.length()) {
+            val a = assets.getJSONObject(i)
+            if (a.getString("name").endsWith(".apk")) { apk = a.getString("browser_download_url"); break }
         }
-    } catch (e: Exception) { null }
+        return Update(tag, apk, j.getString("html_url"))
+    }
 }

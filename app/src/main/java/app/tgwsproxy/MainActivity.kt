@@ -42,16 +42,41 @@ class MainActivity : Activity() {
             text = "Версия ${BuildConfig.VERSION_NAME} · ядро Flowseal ${BuildConfig.UPSTREAM}"; textSize = 12f; gravity = Gravity.CENTER
         })
         val upd = Button(this).apply { visibility = View.GONE }
-        root.addView(upd, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
-        Thread {
-            Updater.check()?.let { u ->
+        fun showUpdate(u: Updater.Update) {
+            upd.text = "Доступно обновление ${u.version} — скачать"
+            upd.setOnClickListener { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u.apkUrl))) }
+            upd.visibility = View.VISIBLE
+        }
+        val checkBtn = Button(this).apply { text = "Проверить обновления"; textSize = 12f; isAllCaps = false }
+        checkBtn.setOnClickListener {
+            checkBtn.isEnabled = false; checkBtn.text = "Проверяю…"
+            Thread {
+                val r = Updater.checkNow()
                 h.post {
-                    upd.text = "Доступно обновление ${u.version} — скачать"
-                    upd.setOnClickListener { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(u.apkUrl))) }
-                    upd.visibility = View.VISIBLE
+                    checkBtn.isEnabled = true; checkBtn.text = "Проверить обновления"
+                    when (r) {
+                        is Updater.Result.Available -> {
+                            showUpdate(r.update)
+                            android.app.AlertDialog.Builder(this)
+                                .setTitle("Доступна версия ${r.update.version}")
+                                .setMessage("У вас ${BuildConfig.VERSION_NAME}. Скачать APK и установить поверх?")
+                                .setPositiveButton("Скачать") { _, _ ->
+                                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(r.update.apkUrl)))
+                                }
+                                .setNegativeButton("Позже", null)
+                                .show()
+                        }
+                        is Updater.Result.Latest -> Toast.makeText(this,
+                            "У вас последняя версия ${r.version} (ядро ${BuildConfig.UPSTREAM})", Toast.LENGTH_LONG).show()
+                        is Updater.Result.Failed -> Toast.makeText(this,
+                            "Не удалось проверить: нет связи с GitHub", Toast.LENGTH_LONG).show()
+                    }
                 }
-            }
-        }.start()
+            }.start()
+        }
+        root.addView(checkBtn, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT))
+        root.addView(upd, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+        Thread { Updater.check()?.let { u -> h.post { showUpdate(u) } } }.start()
 
         // Большая круглая кнопка с самолётиком: старт/стоп.
         val size = (200 * dp).toInt()
